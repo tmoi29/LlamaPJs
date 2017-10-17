@@ -11,7 +11,10 @@ import sqlite3   #enable control of an sqlite database
 f="info.db"
 
 db = sqlite3.connect(f) #open if f exists, otherwise create
-c = db.cursor()    #facilitate db ops
+c = db.cursor()         #facilitate db ops
+outputComms = []         #start a list of commands to execute at the end
+comm = "CREATE TABLE peeps_avg(id INTEGER, avg INTEGER)"
+c.execute(comm)
 
 comm = "SELECT name, peeps.id, mark FROM peeps, courses WHERE peeps.id = courses.id;"
 student_list = c.execute(comm)
@@ -36,6 +39,7 @@ def info(student):
         nums += grade[2]
         count += 1
     print "Name: " +  name + "      \tID: " + str(idnum) + "\t\tAvg: " + str(nums/count)
+    outputComms.append("INSERT INTO peeps_avg VALUES({id},{avg})".format(id=str(idnum),avg=str(nums/count)))
     
 idnum = 1
 entries = []
@@ -52,6 +56,8 @@ for student in student_list:
 
 #needed for the last student
 info(entries)
+for command in outputComms:
+    c.execute(command)
 
 
 #==========================================================
