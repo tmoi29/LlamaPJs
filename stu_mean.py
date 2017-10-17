@@ -12,6 +12,8 @@ f="info.db"
 
 db = sqlite3.connect(f) #open if f exists, otherwise create
 c = db.cursor()         #facilitate db ops
+result = c.fetchall()
+
 outputComms = []         #start a list of commands to execute at the end
 comm = "CREATE TABLE peeps_avg(id INTEGER, avg INTEGER)"
 c.execute(comm)
@@ -26,7 +28,8 @@ def avg():
     ids = c.execute(comm)
     for num in ids:
         comm = "SELECT name, peeps.id, mark FROM peeps, courses WHERE courses.id = " + str(num[0]) + " AND peeps.id = " + str(num[0])
-        student_list = c.execute(comm)
+        dup_curs = db.cursor()
+        student_list = dup_curs.execute(comm) # so it doesn't break the loop
         total = 0
         count = 0
         for student in student_list:
