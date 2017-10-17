@@ -1,3 +1,11 @@
+'''
+Team Llama PJs
+Tiffany Moi and Leo Liu
+SoftDev1 pd7
+HW10 -- Average
+2017-10-17
+'''
+
 import sqlite3   #enable control of an sqlite database
 import csv       #facilitates CSV I/O
 
