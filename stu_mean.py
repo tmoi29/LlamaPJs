@@ -5,7 +5,7 @@ SoftDev1 pd7
 HW10 -- Average
 2017-10-17
 '''
-
+ 
 import sqlite3   #enable control of an sqlite database
 
 f="info.db"
