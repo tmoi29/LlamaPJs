@@ -5,13 +5,16 @@ SoftDev1 pd7
 HW10 -- Average
 2017-10-17
 '''
-
+ 
 import sqlite3   #enable control of an sqlite database
 
 f="info.db"
 
 db = sqlite3.connect(f) #open if f exists, otherwise create
-c = db.cursor()    #facilitate db ops
+c = db.cursor()         #facilitate db ops
+outputComms = []         #start a list of commands to execute at the end
+comm = "CREATE TABLE peeps_avg(id INTEGER, avg INTEGER)"
+c.execute(comm)
 
 #print(student_list)
 
@@ -53,6 +56,7 @@ def info(student):
         nums += grade[2]
         count += 1
     print "Name: " +  name + "      \tID: " + str(idnum) + "\t\tAvg: " + str(nums/count)
+    outputComms.append("INSERT INTO peeps_avg VALUES({id},{avg})".format(id=str(idnum),avg=str(nums/count)))
     
 '''
 idnum = 1
@@ -70,6 +74,10 @@ for student in student_list:
 #needed for the last student
 info(entries)
 '''
+
+for command in outputComms:
+    c.execute(command)
+
 
 
 #==========================================================
