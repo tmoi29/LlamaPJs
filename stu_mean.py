@@ -7,81 +7,115 @@ HW10 -- Average
 '''
  
 import sqlite3   #enable control of an sqlite database
+import csv
 
 f="info.db"
 
 db = sqlite3.connect(f) #open if f exists, otherwise create
 c = db.cursor()         #facilitate db ops
-result = c.fetchall()
 
-outputComms = []         #start a list of commands to execute at the end
+
 comm = "CREATE TABLE peeps_avg(id INTEGER, avg INTEGER)"
 c.execute(comm)
 
-#print(student_list)
 
-comm = "SELECT name, peeps.id, mark FROM peeps, courses WHERE peeps.id = courses.id;"
-student_list = c.execute(comm)
+def avg(grade_list, idnum):
+    total = 0 #sum the grades
+    count = 0
+    name = ""
+    #For each grade
+    for entry in grade_list:
+        name = entry[0]
+        total += entry[2]
+        count += 1
+            
+    #Show the student's info
+    print  "Name: " + name +"\t ID: "+ str(idnum) + "\t Avg: " + str(total/count)
+    return [idnum, total/count]
 
-def avg():
+def insertVal(idnum, avg):
+    #Put data into avg table
+    comm = "INSERT INTO peeps_avg VALUES(" + str(idnum) + "," + str(avg) + ")"
+    dup_curs = db.cursor() # so it doesn't break the loop
+    dup_curs.execute(comm)
+    db.commit()
+
+
+def process():
+    #Get all possible student IDs
     comm = "SELECT DISTINCT peeps.id FROM peeps, courses WHERE peeps.id = courses.id"
     ids = c.execute(comm)
+    vals = []
+    
+    #For each student ID
     for num in ids:
+        
+        #Make a list of all the student's grades
         comm = "SELECT name, peeps.id, mark FROM peeps, courses WHERE courses.id = " + str(num[0]) + " AND peeps.id = " + str(num[0])
-        dup_curs = db.cursor()
-        student_list = dup_curs.execute(comm) # so it doesn't break the loop
-        total = 0
-        count = 0
-        for student in student_list:
-            total += student[2]
-            count += 1
-        print total/count
+        dup_curs = db.cursor() # so it doesn't break the loop
+        grade_list = dup_curs.execute(comm)
+        vals.append(avg(grade_list, num[0]))
+    return vals
+        
+def initialize():
+    vals = process()
+    for each in vals:
+        insertVal(each[0], each[1])
 
-avg()
+initialize()
+
+def updateVal(idnum, newAvg):
+    comm = "UPDATE peeps_avg SET avg = " + str(newAvg) + " WHERE id = " + str(idnum)
+    dup_curs = db.cursor() # so it doesn't break the loop
+    dup_curs.execute(comm)
     
+def updateAvg():
+    print "\n\n NEW AVGS \n\n"
+    vals = process()
+    for each in vals:
+        updateVal(each[0],each[1])
+        
+def addRows():
+    #open le file
+    f = csv.DictReader(open("courses.csv"))
 
-def info(student):
-    nums = 0
-    count = 0
-    name = student[0][0]
-    idnum = student[0][1]
-    for grade in student:
-        ''' 
-        debug code================
-        print "name:  "
-        print grade[0]
-        print "ID:    "
-        print grade[1]
-        print "grade: "
-        print grade[2]
-        end of debug code=========
-        '''
-        nums += grade[2]
-        count += 1
-    print "Name: " +  name + "      \tID: " + str(idnum) + "\t\tAvg: " + str(nums/count)
-    outputComms.append("INSERT INTO peeps_avg VALUES({id},{avg})".format(id=str(idnum),avg=str(nums/count)))
+    #loopy loop through data entries
+    for row in f:
+        code = '"' + row["code"] + '"'
+        mark = int(row['mark'])
+        idnum = int(row['id'])
+        command = '''INSERT INTO courses(code, mark, id) 
+        SELECT %s, %d, %d
+        WHERE NOT EXISTS(SELECT id
+        FROM courses 
+        WHERE code = %s AND mark = %d AND id = %d)'''%(code, mark, idnum, code, mark, idnum)
+        c.execute(command)    #run SQL statement
+
+#TESTING....
+
+#before updating
+print "BEFORE UPDATE\n\n"
+comm = "SELECT name, peeps.id, mark FROM peeps, courses WHERE courses.id = 1 AND peeps.id = 1" 
+dup_curs = db.cursor() # so it doesn't break the loop
+grade_list = dup_curs.execute(comm)
+
+for grade in grade_list:
+    print grade
     
-'''
-idnum = 1
-entries = []
-#separate student_list into individual students, and process it
-for student in student_list:
-    if student[1] == idnum:
-        entries.append(student)
-    else:
-        entry = student
-        info(entries)
-        entries = []
-        entries.append(entry)
-        idnum += 1
-#needed for the last student
-info(entries)
-'''
+#update
+addRows()
 
-for command in outputComms:
-    c.execute(command)
+#after updating
 
+print "\n\nAFTER UPDATE\n\n"
+comm = "SELECT name, peeps.id, mark FROM peeps, courses WHERE courses.id = 1 AND peeps.id = 1" 
+dup_curs = db.cursor() # so it doesn't break the loop
+grade_list = dup_curs.execute(comm)
 
+for grade in grade_list:
+    print grade
+    
+updateAvg()
 
 #==========================================================
 #shouldn't be saving any changes, as this is read-only
